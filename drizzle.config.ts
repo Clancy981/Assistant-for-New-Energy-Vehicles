@@ -4,11 +4,26 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not set");
 }
 
+function isSupabaseHost(hostname: string) {
+  return (
+    hostname.endsWith(".supabase.co") ||
+    hostname.endsWith(".supabase.com") ||
+    hostname.includes("supabase")
+  );
+}
+
 function normalizeDatabaseUrl(connectionString: string) {
   try {
     const url = new URL(connectionString);
-    if (url.hostname.endsWith(".supabase.co") && url.port === "5432") {
-      url.port = "6543";
+    if (isSupabaseHost(url.hostname)) {
+      if (url.port === "" || url.port === "5432") {
+        url.port = "6543";
+      }
+
+      if (!url.searchParams.has("sslmode")) {
+        url.searchParams.set("sslmode", "require");
+      }
+
       return url.toString();
     }
   } catch {
